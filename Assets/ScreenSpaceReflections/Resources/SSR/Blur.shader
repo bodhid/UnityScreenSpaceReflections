@@ -1,4 +1,4 @@
-﻿Shader "Bodhi/PostFX/Blur"
+﻿Shader "Hidden/Bodhi Donselaar/Blur"
 {
 	Properties
 	{

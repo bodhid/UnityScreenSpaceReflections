@@ -1,4 +1,4 @@
-﻿Shader "Hidden/Combine"
+﻿Shader "Hidden/Bodhi Donselaar/Combine"
 {
 	Properties
 	{

@@ -1,4 +1,4 @@
-﻿Shader "Bodhi/PostFX/ScreenSpaceReflections"
+﻿Shader "Hidden/Bodhi Donselaar/ScreenSpaceReflections"
 {
 	Properties
 	{

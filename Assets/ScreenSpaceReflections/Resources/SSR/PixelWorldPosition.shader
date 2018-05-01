@@ -1,4 +1,4 @@
-﻿Shader "Bodhi/PostFX/PixelWorldPosition"
+﻿Shader "Hidden/Bodhi Donselaar/PixelWorldPosition"
 {
 	Properties
 	{
