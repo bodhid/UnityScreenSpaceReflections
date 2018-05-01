@@ -2,10 +2,11 @@
 {
 	Properties
 	{
+		_MainTex("Camera",2D)= "white" {}
 		_Downscale("Downscale",int)=1
 	}
 	CGINCLUDE
-		#pragma multi_compile S16 S32 S48 S64
+		#pragma multi_compile S64 S48 S32 S16   
 		#include "UnityCG.cginc"
 		#if S16
 		#define NUM_SAMPLES (8)
@@ -31,7 +32,7 @@
 			float4 vertex : SV_POSITION;
 		};
 		uniform sampler2D _Noise;
-		float4 _Noise_TexelSize, _AA_TexelSize;
+		float4 _Noise_TexelSize, _MainTex_TexelSize;
 		int _Downscale;
 		VertexDataCalculate VertexCalculate (float4 vertex : POSITION, float2 uv : TEXCOORD0)
 		{
@@ -39,7 +40,7 @@
 			o.vertex = UnityObjectToClipPos(vertex);
 			o.uv = uv;
 			o.viewUV = float4(uv * 2 - 1,1,1);
-			o.noiseUV = float4(_AA_TexelSize.zw*_Noise_TexelSize.xy*uv/_Downscale, 0, 0);
+			o.noiseUV = float4(_MainTex_TexelSize.zw*_Noise_TexelSize.xy*uv/_Downscale, 0, 0);
 			return o;
 		}
 		uniform float4x4 _View2Screen;
@@ -54,7 +55,7 @@
 		{
 			return float3(rayuv = world2screen(wp), tex2Dlod(_WPOS, float4(rayuv,0,0)).a - distance(wp, _WorldSpaceCameraPos));
 		}
-		uniform sampler2D _AA, _CameraGBufferTexture2, _CAMERA_BLURRED, _ssrMask;
+		uniform sampler2D _MainTex, _CameraGBufferTexture2, _ssrMask;
 		float3 result, dir, pos;
 		uint j;
 		float4 FragmentCalculate (VertexDataCalculate i) : SV_Target
@@ -62,27 +63,34 @@
 			float4 SSRValue = 0;
 			float3 worldPosition=tex2D(_WPOS, i.uv).rgb;
 			float distanceToCamera=distance(worldPosition,_WorldSpaceCameraPos);
+
+			//todo: remove this if statement, this prevents skybox reflection
+			if (distanceToCamera > 100)return 0;
+
 			float sampleDistance=distanceToCamera/NUM_SAMPLES_HALF*1.5;
 			float3 viewDir=normalize(worldPosition-_WorldSpaceCameraPos);
 			dir =reflect(viewDir, tex2D(_CameraGBufferTexture2, i.uv).rgb * 2.0 - 1.0)*sampleDistance;//sample dis
 			pos = dir*tex2Dlod(_Noise, i.noiseUV).r*4+worldPosition;
+			float collision;
 			for (j = 0; j < NUM_SAMPLES; ++j) //sample count
 			{
+				collision = 0;
 				result = ray(pos);
-				//todo: lesser if statements?
-				if ((result.x*result.y)<0||max(result.x,result.y)>1)
+				if (any(floor(result.xy)!=float2(0,0)))
 				{
+					collision = 0;
 					SSRValue=float4(0,0,0,0);
-					break; //out of screen
+					break; //out of screen 
 				}
 				if(result.z<0&&result.z>-(sampleDistance*2))
 				{ 
-					SSRValue= float4(tex2Dlod(_AA, float4(result.xy,0,0)).rgb*tex2Dlod(_ssrMask, float4(result.xy,0,0)).r,1);
+					collision = tex2Dlod(_ssrMask, float4(result.xy, 0, 0)).r;
+					SSRValue= float4(tex2Dlod(_MainTex, float4(result.xy,0,0)).rgb*1,1);
 					break;
 				}
 				pos += dir;
 			}
-			return saturate( SSRValue);
+			return saturate( float4(SSRValue.rgb,collision));
 		}
 	ENDCG
 	SubShader
