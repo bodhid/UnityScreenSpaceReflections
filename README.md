@@ -2,8 +2,11 @@
 SSR - Screen Space Reflections post processing effect
 
 Just smack the script on your Unity Camera
+
 -Calculates per-pixel world position
+
 -Reflects the view direction over the G-Buffer normal and raytraces through the world position texture (64 samples, can be less)
+
 -Blurs and combines the result
 
 Blur amount and downsampling can be adjusted.
